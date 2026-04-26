@@ -33,6 +33,8 @@ Four capabilities:
 - **moderate** — failure affects some decisions
 - **minor** — failure has limited impact
 
+Repository: https://github.com/repowazdogz-droid/assumption-registry
+
 ## Install
 
 ```bash
