@@ -1,5 +1,5 @@
 {
-  "name": "assumption-registry-protocol",
+  "name": "assumption-registry",
   "version": "1.0.1",
   "description": "Explicit assumption declaration and impact tracing (ARP-1.0)",
   "license": "MIT",
