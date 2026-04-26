@@ -1,14 +1,24 @@
 /**
- * Assumption Registry Protocol (ARP-1.0)
+ * Assumption Registry Protocol (ARP-2.0)
  * Explicit assumption declaration, dependency tracking, and cascade analysis.
  * Zero external dependencies (Node.js crypto only).
  */
 
-export { schema } from './types';
+export { legacySchema, schema } from './types';
 export type {
   AssumptionCategory,
   AssumptionStatus,
   AssumptionCriticality,
+  LegacyAssumptionCriticality,
+  TestabilityMetadata,
+  TestabilityStatus,
+  VerificationType,
+  DependencyEdge,
+  DependencyEdgeType,
+  DependencyNodeType,
+  PreActionDecisionContext,
+  GateVerdict,
+  PreActionGateReport,
   AssumptionEntry,
   ValidationResult,
   DependencyMap,
@@ -16,6 +26,7 @@ export type {
   CascadeSeverity,
   RegistryHealth,
   RegistrySnapshot,
+  LegacyRegistrySnapshot,
   AssumptionDependencyLink,
   VerifyResult,
   AssumptionFilters,

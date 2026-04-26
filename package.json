@@ -1,7 +1,7 @@
 {
   "name": "assumption-registry",
-  "version": "1.0.1",
-  "description": "Explicit assumption declaration and impact tracing (ARP-1.0)",
+  "version": "2.0.0",
+  "description": "Pre-action assumption governance with criticality, testability metadata, typed dependencies, and gate reports (ARP-2.0)",
   "license": "MIT",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -28,7 +28,7 @@
   "keywords": [
     "omega-protocol",
     "assumption-registry",
-    "arp-1.0"
+    "arp-2.0"
   ],
   "exports": {
     ".": {

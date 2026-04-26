@@ -1,5 +1,5 @@
 /**
- * Assumption Registry Protocol (ARP-1.0) — assumption validation
+ * Assumption Registry Protocol (ARP-2.0) — assumption validation
  */
 import type { AssumptionEntry, ValidationResult } from './types';
 export declare function createValidationResult(assumption_id: string, validated: boolean, method_used: string, evidence: string, validated_at: string): ValidationResult;

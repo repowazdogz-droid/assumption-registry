@@ -1,12 +1,13 @@
 "use strict";
 /**
- * Assumption Registry Protocol (ARP-1.0)
+ * Assumption Registry Protocol (ARP-2.0)
  * Explicit assumption declaration, dependency tracking, and cascade analysis.
  * Zero external dependencies (Node.js crypto only).
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.assumptionPayload = exports.generateId = exports.chainHash = exports.sha256 = exports.applyValidation = exports.canBeValidated = exports.createValidationResult = exports.simulateCascade = exports.getDependencyMap = exports.AssumptionRegistry = exports.schema = void 0;
+exports.assumptionPayload = exports.generateId = exports.chainHash = exports.sha256 = exports.applyValidation = exports.canBeValidated = exports.createValidationResult = exports.simulateCascade = exports.getDependencyMap = exports.AssumptionRegistry = exports.schema = exports.legacySchema = void 0;
 var types_1 = require("./types");
+Object.defineProperty(exports, "legacySchema", { enumerable: true, get: function () { return types_1.legacySchema; } });
 Object.defineProperty(exports, "schema", { enumerable: true, get: function () { return types_1.schema; } });
 var assumption_registry_1 = require("./assumption-registry");
 Object.defineProperty(exports, "AssumptionRegistry", { enumerable: true, get: function () { return assumption_registry_1.AssumptionRegistry; } });

@@ -1,6 +1,6 @@
 "use strict";
 /**
- * Assumption Registry Protocol (ARP-1.0) — dependency graph and impact tracing
+ * Assumption Registry Protocol (ARP-2.0) — dependency graph and impact tracing
  *
  * For assumption A, "dependent assumptions" = assumptions that depend on A
  * (i.e. addAssumptionDependency(their_id, A) was called).

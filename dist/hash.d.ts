@@ -1,5 +1,5 @@
 /**
- * Assumption Registry Protocol (ARP-1.0) — hashing and ID generation
+ * Assumption Registry Protocol (ARP-2.0) — hashing and ID generation
  * Uses Node.js crypto only (zero external dependencies).
  */
 import type { AssumptionEntry } from './types';

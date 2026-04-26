@@ -1,5 +1,5 @@
 /**
- * Assumption Registry Protocol (ARP-1.0) — cascade analysis when an assumption fails
+ * Assumption Registry Protocol (ARP-2.0) — cascade analysis when an assumption fails
  */
 
 import type { AssumptionEntry, CascadeReport, CascadeSeverity } from './types';
@@ -14,7 +14,7 @@ export function simulateCascade(
   const dep = getDependencyMap(failed_assumption_id);
   const byId = new Map(assumptions.map((a) => [a.id, a]));
   const failed = byId.get(failed_assumption_id);
-  const isFoundational = failed?.criticality === 'foundational';
+  const isLoadBearing = failed?.criticality === 'load_bearing';
 
   const directly_affected_decisions = [...dep.dependent_decisions];
   const affected_assumptions = new Set<string>(dep.dependent_assumptions);
@@ -41,7 +41,7 @@ export function simulateCascade(
     totalDecisions + affected_assumptions.size;
 
   let severity: CascadeSeverity = 'contained';
-  if (totalDecisions >= 20 || isFoundational) {
+  if (totalDecisions >= 20 || isLoadBearing) {
     severity = 'systemic';
   } else if (totalDecisions >= 5) {
     severity = 'significant';

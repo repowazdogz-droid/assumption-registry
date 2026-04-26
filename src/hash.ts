@@ -1,5 +1,5 @@
 /**
- * Assumption Registry Protocol (ARP-1.0) — hashing and ID generation
+ * Assumption Registry Protocol (ARP-2.0) — hashing and ID generation
  * Uses Node.js crypto only (zero external dependencies).
  */
 
@@ -36,11 +36,11 @@ export function assumptionPayload(entry: AssumptionEntry): string {
     entry.criticality,
     entry.status,
     String(entry.confidence),
-    String(entry.testable),
-    entry.test_method ?? '',
+    JSON.stringify(entry.testability ?? null),
     entry.domain,
     entry.expires_at ?? '',
     sortedJoin(entry.dependent_decisions),
+    sortedJoin(entry.dependencies),
     entry.superseded_by ?? '',
     entry.validated_at ?? '',
     entry.invalidated_at ?? '',

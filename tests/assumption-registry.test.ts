@@ -299,3 +299,125 @@ describe('AssumptionRegistry — Export', () => {
     expect(md).toContain('Health');
   });
 });
+
+describe('AssumptionRegistry — ARP-2.0', () => {
+  test('criticality is required for v2 records', () => {
+    const reg = new AssumptionRegistry('system-1');
+    expect(() =>
+      reg.register({
+        agent_id: 'agent-1',
+        category: 'temporal',
+        statement: 'Missing criticality should fail',
+        basis: 'ARP-2.0 requires explicit criticality',
+        confidence: 0.8,
+        domain: 'medical',
+        expires_at: null,
+      } as Parameters<AssumptionRegistry['register']>[0])
+    ).toThrow('criticality is required');
+  });
+
+  test('testability metadata serializes correctly', () => {
+    const reg = new AssumptionRegistry('system-1');
+    const testability = {
+      status: 'testable' as const,
+      verification_type: 'external_source_check' as const,
+      method: 'Check NICE website',
+      acceptance_criteria: 'No newer guideline has superseded NG59',
+      evidence_required: ['NICE current guideline page'],
+      last_tested_at: null,
+      next_test_due_at: '2026-06-01T00:00:00Z',
+      verifier: 'clinical-reviewer',
+    };
+
+    const a = register(reg, {
+      criticality: 'load_bearing',
+      testability,
+    });
+    const snapshot = JSON.parse(reg.toJSON());
+
+    expect(a.criticality).toBe('load_bearing');
+    expect(snapshot.schema).toBe('ARP-2.0');
+    expect(snapshot.assumptions[0].testability).toEqual(testability);
+  });
+
+  test('dependency edges are typed and persisted', () => {
+    const reg = new AssumptionRegistry('system-1');
+    const a = register(reg, { criticality: 'load_bearing' });
+    const b = register(reg, { statement: 'Refined assumption', criticality: 'peripheral' });
+    const edge = reg.addAssumptionDependency(b.id, a.id, 'refines');
+    const snapshot = JSON.parse(reg.toJSON());
+
+    expect(edge.type).toBe('refines');
+    expect(reg.getDependencyEdges()).toHaveLength(1);
+    expect(snapshot.dependency_edges[0].type).toBe('refines');
+  });
+
+  test('pre-action gate report identifies unverified load-bearing assumptions', () => {
+    const reg = new AssumptionRegistry('system-1');
+    const a = register(reg, {
+      criticality: 'load_bearing',
+      testability: {
+        status: 'testable',
+        verification_type: 'human_review',
+        method: 'Review source evidence',
+        acceptance_criteria: 'Reviewer confirms assumption is still valid',
+        evidence_required: ['source review'],
+        last_tested_at: null,
+        next_test_due_at: null,
+        verifier: null,
+      },
+    });
+    reg.addDependency(a.id, 'clearpath-trace-1');
+
+    const report = reg.generatePreActionGateReport({
+      action_id: 'action-1',
+      decision_ids: ['clearpath-trace-1'],
+    });
+
+    expect(report.verdict).toBe('block');
+    expect(report.load_bearing_assumptions).toContain(a.id);
+    expect(report.unverified_load_bearing_assumptions).toContain(a.id);
+  });
+
+  test('v1 snapshots parse on read and emit v2 snapshots', () => {
+    const v1 = {
+      schema: 'ARP-1.0',
+      system_id: 'system-1',
+      assumptions: [
+        {
+          id: 'a1',
+          timestamp: '2026-04-26T00:00:00.000Z',
+          agent_id: 'agent-1',
+          category: 'temporal',
+          statement: 'NICE guideline is current',
+          basis: 'NICE publication page',
+          criticality: 'foundational',
+          status: 'untested',
+          confidence: 0.9,
+          testable: true,
+          test_method: 'Check NICE',
+          domain: 'medical',
+          expires_at: null,
+          dependent_decisions: ['trace-1'],
+          superseded_by: null,
+          validated_at: null,
+          invalidated_at: null,
+          invalidation_reason: null,
+          hash: 'legacy-hash',
+          previous_hash: '0',
+        },
+      ],
+      assumption_dependencies: [],
+    };
+
+    const restored = AssumptionRegistry.fromJSON(JSON.stringify(v1));
+    const migrated = restored.getAssumptions()[0];
+    const emitted = JSON.parse(restored.toJSON());
+
+    expect(migrated.criticality).toBe('load_bearing');
+    expect(migrated.testability?.method).toBe('Check NICE');
+    expect(restored.verify().valid).toBe(true);
+    expect(emitted.schema).toBe('ARP-2.0');
+    expect(emitted.dependency_edges[0].type).toBe('constrains');
+  });
+});

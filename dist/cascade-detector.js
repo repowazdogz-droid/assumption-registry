@@ -1,6 +1,6 @@
 "use strict";
 /**
- * Assumption Registry Protocol (ARP-1.0) — cascade analysis when an assumption fails
+ * Assumption Registry Protocol (ARP-2.0) — cascade analysis when an assumption fails
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.simulateCascade = simulateCascade;
@@ -8,7 +8,7 @@ function simulateCascade(failed_assumption_id, assumptions, dependentsMap, getDe
     const dep = getDependencyMap(failed_assumption_id);
     const byId = new Map(assumptions.map((a) => [a.id, a]));
     const failed = byId.get(failed_assumption_id);
-    const isFoundational = failed?.criticality === 'foundational';
+    const isLoadBearing = failed?.criticality === 'load_bearing';
     const directly_affected_decisions = [...dep.dependent_decisions];
     const affected_assumptions = new Set(dep.dependent_assumptions);
     const indirectly_affected_decisions = new Set();
@@ -29,7 +29,7 @@ function simulateCascade(failed_assumption_id, assumptions, dependentsMap, getDe
     const totalDecisions = directly_affected_decisions.length + indirectly_affected_decisions.size;
     const total_cascade_size = totalDecisions + affected_assumptions.size;
     let severity = 'contained';
-    if (totalDecisions >= 20 || isFoundational) {
+    if (totalDecisions >= 20 || isLoadBearing) {
         severity = 'systemic';
     }
     else if (totalDecisions >= 5) {

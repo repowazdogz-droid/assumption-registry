@@ -1,6 +1,6 @@
 "use strict";
 /**
- * Assumption Registry Protocol (ARP-1.0) — assumption validation
+ * Assumption Registry Protocol (ARP-2.0) — assumption validation
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createValidationResult = createValidationResult;

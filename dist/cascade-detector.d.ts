@@ -1,5 +1,5 @@
 /**
- * Assumption Registry Protocol (ARP-1.0) — cascade analysis when an assumption fails
+ * Assumption Registry Protocol (ARP-2.0) — cascade analysis when an assumption fails
  */
 import type { AssumptionEntry, CascadeReport } from './types';
 import type { DependencyMap } from './types';
