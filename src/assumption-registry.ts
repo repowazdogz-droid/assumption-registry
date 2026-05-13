@@ -21,8 +21,8 @@ import type {
   PreActionDecisionContext,
   PreActionGateReport,
 } from './types';
-import { legacySchema, schema } from './types';
-import { generateId, chainHash, assumptionPayload } from './hash';
+import { legacySchema, schema, arp2Schema } from './types';
+import { generateId, chainHash, assumptionPayload, assumptionPayloadV1, assumptionPayloadV2 } from './hash';
 import { createValidationResult, canBeValidated, applyValidation } from './validator';
 import { getDependencyMap } from './impact-tracer';
 import { simulateCascade } from './cascade-detector';
@@ -42,7 +42,11 @@ type RegisterInput = Omit<
   | 'superseded_by'
   | 'dependent_decisions'
   | 'dependencies'
-> & { dependent_decisions?: string[] };
+> & {
+  dependent_decisions?: string[];
+  reasoning_steps?: AssumptionEntry['reasoning_steps'];
+  faithfulness_certification?: AssumptionEntry['faithfulness_certification'];
+};
 
 type SupersedeInput = Omit<
   AssumptionEntry,
@@ -57,7 +61,10 @@ type SupersedeInput = Omit<
   | 'superseded_by'
   | 'dependent_decisions'
   | 'dependencies'
->;
+> & {
+  reasoning_steps?: AssumptionEntry['reasoning_steps'];
+  faithfulness_certification?: AssumptionEntry['faithfulness_certification'];
+};
 
 type RegisterAdapterInput = Omit<RegisterInput, 'criticality' | 'testability'> & {
   criticality: AssumptionCriticality | LegacyAssumptionCriticality;
@@ -488,15 +495,38 @@ export class AssumptionRegistry {
   }
 
   verify(): VerifyResult {
+    return this.verifyChain();
+  }
+
+  verifyChain(options?: { mode: 'v1' | 'v2' | 'dual' }): VerifyResult {
+    const mode = options?.mode ?? 'dual';
     let valid = true;
     let prev = GENESIS;
+    let entries_checked = 0;
+
     for (const a of this.assumptions) {
-      if (a.previous_hash !== prev) valid = false;
-      const expected = chainHash(a.previous_hash, assumptionPayload(a));
-      if (a.hash !== expected) valid = false;
+      if (a.previous_hash !== prev) {
+        valid = false;
+        break;
+      }
+
+      let match = false;
+      if (mode === 'v1' || mode === 'dual') {
+        if (a.hash === chainHash(a.previous_hash, assumptionPayloadV1(a))) match = true;
+      }
+      if (!match && (mode === 'v2' || mode === 'dual')) {
+        if (a.hash === chainHash(a.previous_hash, assumptionPayloadV2(a))) match = true;
+      }
+
+      if (!match) {
+        valid = false;
+        break;
+      }
       prev = a.hash;
+      entries_checked++;
     }
-    return { valid, entries_checked: this.assumptions.length };
+
+    return { valid, entries_checked };
   }
 
   toJSON(): string {
@@ -542,8 +572,8 @@ export class AssumptionRegistry {
 
   static fromJSON(json: string): AssumptionRegistry {
     const parsed = JSON.parse(json) as RegistrySnapshot | LegacyRegistrySnapshot;
-    if (parsed.schema !== schema && parsed.schema !== legacySchema) {
-      throw new Error(`Invalid schema: expected ${schema} or ${legacySchema}`);
+    if (parsed.schema !== schema && parsed.schema !== arp2Schema && parsed.schema !== legacySchema) {
+      throw new Error(`Invalid schema: expected ${schema}, ${arp2Schema} or ${legacySchema}`);
     }
     const snapshot = parsed.schema === legacySchema ? AssumptionRegistry.migrateV1Snapshot(parsed) : parsed;
     const reg = new AssumptionRegistry(snapshot.system_id);

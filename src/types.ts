@@ -2,7 +2,8 @@
  * Assumption Registry Protocol (ARP-2.0) — type definitions
  */
 
-export const schema = 'ARP-2.0' as const;
+export const schema = 'CLP-2.0' as const;
+export const arp2Schema = 'ARP-2.0' as const;
 export const legacySchema = 'ARP-1.0' as const;
 
 export type AssumptionCategory =
@@ -60,6 +61,20 @@ export interface TestabilityMetadata {
   verifier: string | null;
 }
 
+export interface ReasoningStep {
+  step_number: number;
+  thought: string;
+  evidence_links: string[];
+  confidence: number;
+}
+
+export interface FaithfulnessCertification {
+  certified: boolean;
+  certified_by: string;
+  certification_timestamp: string;
+  rationale: string;
+}
+
 export type DependencyNodeType =
   | 'assumption'
   | 'decision'
@@ -114,7 +129,12 @@ export interface AssumptionEntry {
   confidence: number;
   testability?: TestabilityMetadata;
   /**
-   * Deprecated ARP-1.0 adapter fields. New ARP-2.0 callers should use testability.
+   * CLP-2.0 reasoning and faithfulness fields
+   */
+  reasoning_steps?: ReasoningStep[];
+  faithfulness_certification?: FaithfulnessCertification;
+  /**
+   * Deprecated ARP-1.0 adapter fields. New ARP-2.0/CLP-2.0 callers should use testability.
    */
   testable?: boolean;
   test_method?: string | null;
@@ -179,7 +199,7 @@ export interface AssumptionDependencyLink {
 }
 
 export interface RegistrySnapshot {
-  schema: typeof schema;
+  schema: typeof schema | typeof arp2Schema;
   system_id: string;
   assumptions: AssumptionEntry[];
   dependency_edges: DependencyEdge[];

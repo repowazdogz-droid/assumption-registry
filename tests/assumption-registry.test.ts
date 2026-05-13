@@ -336,7 +336,7 @@ describe('AssumptionRegistry — ARP-2.0', () => {
     const snapshot = JSON.parse(reg.toJSON());
 
     expect(a.criticality).toBe('load_bearing');
-    expect(snapshot.schema).toBe('ARP-2.0');
+    expect(snapshot.schema).toBe('CLP-2.0');
     expect(snapshot.assumptions[0].testability).toEqual(testability);
   });
 
@@ -417,7 +417,95 @@ describe('AssumptionRegistry — ARP-2.0', () => {
     expect(migrated.criticality).toBe('load_bearing');
     expect(migrated.testability?.method).toBe('Check NICE');
     expect(restored.verify().valid).toBe(true);
-    expect(emitted.schema).toBe('ARP-2.0');
+    expect(emitted.schema).toBe('CLP-2.0'); // Now defaults to CLP-2.0
     expect(emitted.dependency_edges[0].type).toBe('constrains');
+  });
+
+  test('registers CLP-2.0 fields and verifies chain', () => {
+    const reg = new AssumptionRegistry('system-clp');
+    const reasoning_steps = [
+      { step_number: 1, thought: 'Step 1 thought', evidence_links: ['e1'], confidence: 0.9 }
+    ];
+    const faithfulness_certification = {
+      certified: true,
+      certified_by: 'validator-1',
+      certification_timestamp: new Date().toISOString(),
+      rationale: 'Reasoning is sound'
+    };
+
+    const a = reg.register({
+      agent_id: 'agent-1',
+      category: 'causal',
+      statement: 'CLP statement',
+      basis: 'CLP basis',
+      criticality: 'load_bearing',
+      confidence: 0.9,
+      domain: 'test',
+      expires_at: null,
+      reasoning_steps,
+      faithfulness_certification
+    });
+
+    expect(a.reasoning_steps).toEqual(reasoning_steps);
+    expect(a.faithfulness_certification).toEqual(faithfulness_certification);
+
+    const result = reg.verifyChain({ mode: 'v2' });
+    expect(result.valid).toBe(true);
+    expect(result.entries_checked).toBe(1);
+  });
+
+  test('verifyChain supports dual-mode for mixed/migrated entries', () => {
+    const reg = new AssumptionRegistry('system-mixed');
+
+    // Register one without CLP fields
+    reg.register({
+      agent_id: 'a1',
+      category: 'ethical',
+      statement: 'S1',
+      basis: 'B1',
+      criticality: 'peripheral',
+      confidence: 0.8,
+      domain: 'test',
+      expires_at: null
+    });
+
+    // Register one with CLP fields
+    reg.register({
+      agent_id: 'a2',
+      category: 'regulatory',
+      statement: 'S2',
+      basis: 'B2',
+      criticality: 'load_bearing',
+      confidence: 0.7,
+      domain: 'test',
+      expires_at: null,
+      reasoning_steps: [{ step_number: 1, thought: 'T1', evidence_links: [], confidence: 1.0 }]
+    });
+
+    const result = reg.verifyChain({ mode: 'dual' });
+    expect(result.valid).toBe(true);
+    expect(result.entries_checked).toBe(2);
+  });
+
+  test('verifyChain mode:v1 verifies legacy-style hashes', () => {
+    const reg = new AssumptionRegistry('system-v1');
+    const entry = reg.register({
+      agent_id: 'a1',
+      category: 'ethical',
+      statement: 'S1',
+      basis: 'B1',
+      criticality: 'peripheral',
+      confidence: 0.8,
+      domain: 'test',
+      expires_at: null
+    });
+
+    // Manually set a V1 hash (legacy ARP-2.0 format)
+    const { chainHash, assumptionPayloadV1 } = require('../src/hash');
+    entry.hash = chainHash(entry.previous_hash, assumptionPayloadV1(entry));
+
+    expect(reg.verifyChain({ mode: 'v1' }).valid).toBe(true);
+    expect(reg.verifyChain({ mode: 'v2' }).valid).toBe(false);
+    expect(reg.verifyChain({ mode: 'dual' }).valid).toBe(true);
   });
 });

@@ -25,7 +25,10 @@ function sortedJoin(arr: string[]): string {
   return [...arr].sort().join('|');
 }
 
-export function assumptionPayload(entry: AssumptionEntry): string {
+/**
+ * Legacy ARP-2.0 payload format
+ */
+export function assumptionPayloadV1(entry: AssumptionEntry): string {
   return [
     entry.id,
     entry.timestamp,
@@ -46,4 +49,39 @@ export function assumptionPayload(entry: AssumptionEntry): string {
     entry.invalidated_at ?? '',
     entry.invalidation_reason ?? '',
   ].join('\n');
+}
+
+/**
+ * CLP-2.0 payload format (includes reasoning and faithfulness)
+ */
+export function assumptionPayloadV2(entry: AssumptionEntry): string {
+  return [
+    entry.id,
+    entry.timestamp,
+    entry.agent_id,
+    entry.category,
+    entry.statement,
+    entry.basis,
+    entry.criticality,
+    entry.status,
+    String(entry.confidence),
+    JSON.stringify(entry.testability ?? null),
+    JSON.stringify(entry.reasoning_steps ?? []),
+    JSON.stringify(entry.faithfulness_certification ?? null),
+    entry.domain,
+    entry.expires_at ?? '',
+    sortedJoin(entry.dependent_decisions),
+    sortedJoin(entry.dependencies),
+    entry.superseded_by ?? '',
+    entry.validated_at ?? '',
+    entry.invalidated_at ?? '',
+    entry.invalidation_reason ?? '',
+  ].join('\n');
+}
+
+/**
+ * Default payload for current schema (V2)
+ */
+export function assumptionPayload(entry: AssumptionEntry): string {
+  return assumptionPayloadV2(entry);
 }
